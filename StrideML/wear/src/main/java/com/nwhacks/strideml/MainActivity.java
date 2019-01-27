@@ -1,23 +1,37 @@
-package net.thebitspud.accelerometertest;
+package com.nwhacks.strideml;
 
+import android.app.Notification;
+import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
+import android.support.v4.content.LocalBroadcastManager;
+import android.support.wearable.activity.WearableActivity;
+import android.util.Log;
+
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.NotificationManagerCompat;
+import android.support.v4.app.NotificationCompat.WearableExtender;
+import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Writer;
-import java.util.ArrayList;
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
+import com.google.android.gms.wearable.Node;
+import com.google.android.gms.wearable.Wearable;
+
+import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.ExecutionException;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
-public class MainActivity extends AppCompatActivity implements AccelerometerListener, SensorEventListener {
+public class MainActivity extends WearableActivity implements AccelerometerListener, SensorEventListener {
     private float deltaXMax = 0;
     private float deltaYMax = 0;
     private float deltaZMax = 0;
@@ -26,16 +40,40 @@ public class MainActivity extends AppCompatActivity implements AccelerometerList
     private float deltaY = 0;
     private float deltaZ = 0;
 
-    private TextView mainText;
+    private int iteration = 0;
+    private int maxIteration = 20;
 
-    private Gson gson;
-    private ArrayList<Stride> data;
+    //data layer
+    private TextView textView;
+    Button talkButton;
+    int receivedMessageNumber = 1;
+    int sentMessageNumber = 1;
+    // end of init data layer
+    private String dataOutput = "";
+    private String finalData = "{\"data\":[";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        mainText = findViewById(R.id.main_text);
+
+        textView = findViewById(R.id.text);
+        talkButton = findViewById(R.id.talkClick);
+
+        talkButton.setOnClickListener(new View.OnClickListener(){
+            public void onClick(View v){
+                String onClickMessage = "I just sent the handheld a message " + sentMessageNumber++;
+                textView.setText(onClickMessage);
+
+                String datapath = "/my_path";
+                new SendMessage(datapath, onClickMessage).start();
+            }
+        });
+
+        IntentFilter newFilter = new IntentFilter(Intent.ACTION_SEND);
+        Receiver messageReceiver = new Receiver();
+
+        LocalBroadcastManager.getInstance(this).registerReceiver(messageReceiver, newFilter);
 
         SensorManager sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         if (Objects.requireNonNull(sensorManager).getDefaultSensor(Sensor.TYPE_ACCELEROMETER) != null) {
@@ -44,9 +82,67 @@ public class MainActivity extends AppCompatActivity implements AccelerometerList
             Sensor accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
             sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
         }
+    }
 
-        gson = new Gson();
-        data = new ArrayList<>();
+    public class Receiver extends BroadcastReceiver{
+        public void onReceive(Context context, Intent intent){
+            String onMessageReceived = "I just received a message from the phone";
+            textView.setText(onMessageReceived);
+        }
+    }
+
+    class SendMessage extends Thread{
+        String path;
+        String message;
+
+        SendMessage(String p, String m){
+            path = p;
+            message = m;
+        }
+
+        public void run(){
+            Task<List<Node>> nodeListTask =
+                    Wearable.getNodeClient(getApplicationContext()).getConnectedNodes();
+            try {
+
+//Block on a task and get the result synchronously//
+
+                List<Node> nodes = Tasks.await(nodeListTask);
+                for (Node node : nodes) {
+
+//Send the message///
+
+                    Task<Integer> sendMessageTask =
+                            Wearable.getMessageClient(MainActivity.this).sendMessage(node.getId(), path, message.getBytes());
+
+                    try {
+
+                        Integer result = Tasks.await(sendMessageTask);
+
+//Handle the errors//
+
+                    } catch (ExecutionException exception) {
+
+//TO DO//
+
+                    } catch (InterruptedException exception) {
+
+//TO DO//
+
+                    }
+
+                }
+
+            } catch (ExecutionException exception) {
+
+//TO DO//
+
+            } catch (InterruptedException exception) {
+
+//TO DO//
+
+            }
+        }
     }
 
     @Override
@@ -78,7 +174,6 @@ public class MainActivity extends AppCompatActivity implements AccelerometerList
             AccelerometerManager.stopListening();
         }
     }
-
     @Override
     public void onDestroy() {
         super.onDestroy();
@@ -100,35 +195,51 @@ public class MainActivity extends AppCompatActivity implements AccelerometerList
         deltaX = Math.abs(lastX - event.values[0]);
         deltaY = Math.abs(lastY - event.values[1]);
         deltaZ = Math.abs(lastZ - event.values[2] + (float) 9.8);
+
+        // if the change is below 2, it is just plain noise
+        if (deltaX < 2)
+            deltaX = 0;
+        if (deltaY < 2)
+            deltaY = 0;
+        if (deltaZ < 2)
+            deltaZ = 0;
     }
 
     // display the current x,y,z accelerometer values
 
-    private long ltShort = System.currentTimeMillis(),
-            ltLong = System.currentTimeMillis();
+    private long lastTick = System.currentTimeMillis();
+
+    private void sendNoti(String text) {
+        int id = 001;
+        Intent intent = new Intent(this, MainActivity.class);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this,0,intent,PendingIntent.FLAG_UPDATE_CURRENT);
+
+        Notification notification = new NotificationCompat.Builder(this)
+                .setContentText(text)
+                .setContentTitle("Stride")
+                .setSmallIcon(R.drawable.ic_cc_checkmark)
+                .extend(new NotificationCompat.WearableExtender())
+                .build();
+
+        NotificationManagerCompat notificationManagerCompat = NotificationManagerCompat.from(this);
+        notificationManagerCompat.notify(id ,notification);
+    }
 
     public void displayCurrentValues() {
         long now = System.currentTimeMillis();
 
-        if(now > ltShort + 250) {
-            ltShort = now;
-            System.out.println("X = " + deltaX + " | Y = " + deltaY + " | Z = " + deltaZ);
-            float xy = (float) Math.sqrt(Math.pow(deltaX, 2) + Math.pow(deltaY, 2));
-            data.add(new Stride(System.currentTimeMillis(), xy, deltaZ));
-        }
+        dataOutput = "{\"ts\" : " + lastTick + ",\"x\" : " + Float.toString(deltaX) + ", \"y\" : " + Float.toString(deltaY) + ", \"z\" : " + Float.toString(deltaZ) + "}";
 
-        if(now > ltLong + 750) {
-            ltLong = now;
-            mainText.setText("X = " + deltaX + "\nY = " + deltaY + "\nZ = " + deltaZ);
-            String toJson = gson.toJson(data);
-            System.out.println(toJson);
-
-            try (Writer writer = new FileWriter("Output.json")) {
-                Gson gson = new GsonBuilder().create();
-                gson.toJson(data, writer);
-            } catch (IOException e) {
-                e.printStackTrace();
+        if(now > lastTick + 250) {
+            iteration++;
+            if(iteration > maxIteration){
+                sendNoti(finalData);
+                System.out.println(finalData);
+                iteration = 0;
+                finalData = "";
             }
+            finalData = finalData + "," + dataOutput;
+            lastTick = now;
         }
     }
 
@@ -148,17 +259,5 @@ public class MainActivity extends AppCompatActivity implements AccelerometerList
     @Override
     public void onAccuracyChanged(Sensor sensor, int i) {
 
-    }
-}
-
-class Stride {
-    long ts;
-    float xy;
-    float z;
-
-    public Stride(long ts, float xy, float z) {
-        this.ts = ts;
-        this.xy = xy;
-        this.z = z;
     }
 }

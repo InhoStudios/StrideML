@@ -8,7 +8,6 @@ import android.hardware.SensorManager;
 import android.widget.Toast;
 
 import java.util.List;
-
 public class AccelerometerManager {
     private static Context context = null;
     /**
