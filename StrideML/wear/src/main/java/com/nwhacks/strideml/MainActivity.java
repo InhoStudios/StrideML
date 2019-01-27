@@ -95,6 +95,7 @@ public class MainActivity extends WearableActivity implements AccelerometerListe
         public void onReceive(Context context, Intent intent){
             String onMessageReceived = "I just received a message from the phone";
             textView.setText(onMessageReceived);
+            sendNoti("Your phone has been taken. Call 911 or else. >;(");
         }
     }
 
@@ -111,6 +112,7 @@ public class MainActivity extends WearableActivity implements AccelerometerListe
         Message msg = myHandler.obtainMessage();
         msg.setData(bundle);
         myHandler.sendMessage(msg);
+        Log.i("Handler","Data Transferred");
     }
 
     class SendMessage extends Thread{
@@ -215,10 +217,14 @@ public class MainActivity extends WearableActivity implements AccelerometerListe
         Intent intent = new Intent(this, MainActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(this,0,intent,PendingIntent.FLAG_UPDATE_CURRENT);
 
+        long[] vibLen = {0, 300};
+
         Notification notification = new NotificationCompat.Builder(this)
                 .setContentText(text)
                 .setContentTitle("Stride")
                 .setSmallIcon(R.drawable.ic_cc_checkmark)
+                .setPriority(NotificationCompat.PRIORITY_MAX)
+                .setVibrate(vibLen)
                 .extend(new NotificationCompat.WearableExtender())
                 .build();
 
@@ -234,7 +240,6 @@ public class MainActivity extends WearableActivity implements AccelerometerListe
         if(now > lastTick + 250) {
             iteration++;
             if(iteration > maxIteration){
-                sendNoti(finalData);
                 System.out.println(finalData);
                 iteration = 0;
                 finalData = "";
