@@ -93,9 +93,9 @@ public class MainActivity extends WearableActivity implements AccelerometerListe
 
     public class Receiver extends BroadcastReceiver{
         public void onReceive(Context context, Intent intent){
-            String onMessageReceived = "I just received a message from the phone";
+            String onMessageReceived = "[ALERT] Your phone has been taken.";
             textView.setText(onMessageReceived);
-            sendNoti("Your phone has been taken. Call 911 or else. >;(");
+            sendNoti(onMessageReceived);
         }
     }
 
