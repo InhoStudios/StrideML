@@ -11,6 +11,8 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.wearable.activity.WearableActivity;
 import android.util.Log;
@@ -44,8 +46,9 @@ public class MainActivity extends WearableActivity implements AccelerometerListe
     private int maxIteration = 20;
 
     //data layer
-    private TextView textView;
+    TextView textView;
     Button talkButton;
+    protected Handler myHandler;
     int receivedMessageNumber = 1;
     int sentMessageNumber = 1;
     // end of init data layer
@@ -60,13 +63,11 @@ public class MainActivity extends WearableActivity implements AccelerometerListe
         textView = findViewById(R.id.text);
         talkButton = findViewById(R.id.talkClick);
 
-        talkButton.setOnClickListener(new View.OnClickListener(){
-            public void onClick(View v){
-                String onClickMessage = "I just sent the handheld a message " + sentMessageNumber++;
-                textView.setText(onClickMessage);
-
-                String datapath = "/my_path";
-                new SendMessage(datapath, onClickMessage).start();
+        myHandler = new Handler(new Handler.Callback(){
+            public boolean handleMessage(Message msg){
+                Bundle stuff = msg.getData();
+                messageText(stuff.getString("messageText"));
+                return true;
             }
         });
 
@@ -84,11 +85,32 @@ public class MainActivity extends WearableActivity implements AccelerometerListe
         }
     }
 
+    public void messageText(String newinfo){
+        if(newinfo.compareTo("") != 0){
+            textView.append("\n" + newinfo);
+        }
+    }
+
     public class Receiver extends BroadcastReceiver{
         public void onReceive(Context context, Intent intent){
             String onMessageReceived = "I just received a message from the phone";
             textView.setText(onMessageReceived);
         }
+    }
+
+    public void talkClick(View v){
+        String message = "Sending Message...";
+        textView.setText(message);
+
+        new SendMessage("/my_path",message).start();
+    }
+
+    public void sendMessage(String messageText){
+        Bundle bundle = new Bundle();
+        bundle.putString("messageText", messageText);
+        Message msg = myHandler.obtainMessage();
+        msg.setData(bundle);
+        myHandler.sendMessage(msg);
     }
 
     class SendMessage extends Thread{
@@ -101,46 +123,25 @@ public class MainActivity extends WearableActivity implements AccelerometerListe
         }
 
         public void run(){
-            Task<List<Node>> nodeListTask =
-                    Wearable.getNodeClient(getApplicationContext()).getConnectedNodes();
-            try {
+            Task<List<Node>> wearableList = Wearable.getNodeClient(getApplicationContext()).getConnectedNodes();
+            try{
+                List<Node> nodes = Tasks.await(wearableList);
+                for(Node node : nodes){
+                    Task<Integer> sendMessageTask = Wearable.getMessageClient(MainActivity.this).sendMessage(node.getId(),path,message.getBytes());
 
-//Block on a task and get the result synchronously//
-
-                List<Node> nodes = Tasks.await(nodeListTask);
-                for (Node node : nodes) {
-
-//Send the message///
-
-                    Task<Integer> sendMessageTask =
-                            Wearable.getMessageClient(MainActivity.this).sendMessage(node.getId(), path, message.getBytes());
-
-                    try {
-
+                    try{
                         Integer result = Tasks.await(sendMessageTask);
-
-//Handle the errors//
-
-                    } catch (ExecutionException exception) {
-
-//TO DO//
-
-                    } catch (InterruptedException exception) {
-
-//TO DO//
-
+                        sendMessage("I just sent the phone a message: #" + sentMessageNumber++);
+                    } catch(ExecutionException e){
+                        e.printStackTrace();
+                    } catch(InterruptedException exception){
+                        exception.printStackTrace();
                     }
-
                 }
-
-            } catch (ExecutionException exception) {
-
-//TO DO//
-
-            } catch (InterruptedException exception) {
-
-//TO DO//
-
+            } catch(ExecutionException e){
+                e.printStackTrace();
+            } catch(InterruptedException e){
+                e.printStackTrace();
             }
         }
     }

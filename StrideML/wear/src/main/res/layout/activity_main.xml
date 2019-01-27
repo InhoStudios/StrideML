@@ -11,14 +11,14 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:gravity="center_horizontal"
-        android:orientation="vertical"
-        app:boxedEdges="all">
+        android:orientation="vertical">
 
         <Button
             android:id="@+id/talkClick"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Talk to the handheld"/>
+            android:text="Interface with phone"
+            android:onClick="talkClick"/>
 
         <TextView
             android:id="@+id/text"

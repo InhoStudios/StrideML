@@ -64,6 +64,7 @@ public class MainActivity extends AppCompatActivity implements AccelerometerList
 
         IntentFilter messageFilter = new IntentFilter(Intent.ACTION_SEND);
         Receiver messageReceiver = new Receiver();
+
         LocalBroadcastManager.getInstance(this).registerReceiver(messageReceiver, messageFilter);
 
         // end of Data Layer stuff
@@ -86,8 +87,8 @@ public class MainActivity extends AppCompatActivity implements AccelerometerList
 
     public class Receiver extends BroadcastReceiver{
         public void onReceive(Context context, Intent intent){
-            String message = "I just received a message from the watch";
-            textview.setText(message);
+            String onMessageReceived = "I just received a message from the watch";
+            textview.setText(onMessageReceived);
         }
     }
 
@@ -124,7 +125,7 @@ public class MainActivity extends AppCompatActivity implements AccelerometerList
 
                     try{
                         Integer result = Tasks.await(sendMessageTask);
-                        sendMessage("I just sent the wearable a message " + sentMessageNumber++);
+                        sendMessage("I just sent the wearable a message: #" + sentMessageNumber++);
                     } catch(ExecutionException e){
                         e.printStackTrace();
                     } catch(InterruptedException exception){
