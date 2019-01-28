@@ -28,7 +28,7 @@ public class Main {
     public static int[] predict (String json) {
         String fullModel = null;
         try {
-            fullModel = new ClassPathResource("Model-88.hf").getFile().getPath();
+            fullModel = new ClassPathResource("Model-88.h5").getFile().getPath();
         } catch (IOException e) {
             e.printStackTrace();
         }
