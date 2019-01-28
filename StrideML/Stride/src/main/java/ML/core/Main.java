@@ -22,35 +22,25 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import static jdk.nashorn.internal.objects.Global.print;
-
 public class Main {
 
 
     public static int[] predict (String json) {
-        String simpleMlp = "Model-88.hf";
-//        try {
-//            simpleMlp = new ClassPathResource("Model-88.hf").getFile().getPath();
-//        } catch (IOException e) {
-//            int[] output = new int[1];
-//            output[0] = -1;
-//            return output;
-//        }
-        MultiLayerNetwork model;
+        String fullModel = null;
         try {
-            model = KerasModelImport.importKerasSequentialModelAndWeights(simpleMlp);
+            fullModel = new ClassPathResource("Model-88.hf").getFile().getPath();
         } catch (IOException e) {
-            int[] output = new int[1];
-            output[0] = -1;
-            return output;
+            e.printStackTrace();
+        }
+        MultiLayerNetwork model = null;
+        try {
+            model = KerasModelImport.importKerasSequentialModelAndWeights(fullModel);
+        } catch (IOException e) {
+            e.printStackTrace();
         } catch (InvalidKerasConfigurationException e) {
-            int[] output = new int[1];
-            output[0] = -2;
-            return output;
+            e.printStackTrace();
         } catch (UnsupportedKerasConfigurationException e) {
-            int[] output = new int[1];
-            output[0] = -3;
-            return output;
+            e.printStackTrace();
         }
 
         JsonObject input = new JsonParser().parse(json).getAsJsonObject();
