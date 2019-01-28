@@ -1,29 +1,14 @@
-package com.sml.core;
-
-
+package ML.core;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-import org.deeplearning4j.datasets.iterator.*;
-import org.deeplearning4j.datasets.iterator.impl.*;
-import org.deeplearning4j.nn.api.*;
 import org.deeplearning4j.nn.modelimport.keras.KerasModelImport;
 import org.deeplearning4j.nn.modelimport.keras.exceptions.InvalidKerasConfigurationException;
 import org.deeplearning4j.nn.modelimport.keras.exceptions.UnsupportedKerasConfigurationException;
 import org.deeplearning4j.nn.multilayer.*;
-import org.deeplearning4j.nn.graph.*;
-import org.deeplearning4j.nn.conf.*;
-import org.deeplearning4j.nn.conf.inputs.*;
-import org.deeplearning4j.nn.conf.layers.*;
-import org.deeplearning4j.nn.weights.*;
-import org.deeplearning4j.optimize.listeners.*;
-import org.deeplearning4j.datasets.datavec.RecordReaderMultiDataSetIterator;
-import org.nd4j.linalg.dataset.DataSet;
 
-import org.nd4j.evaluation.classification.Evaluation;
-import org.nd4j.evaluation.classification.ROCMultiClass;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.cpu.nativecpu.NDArray;
 import org.nd4j.linalg.factory.Nd4j;
@@ -32,7 +17,6 @@ import org.nd4j.linalg.learning.config.*; // for different updaters like Adam, N
 import org.nd4j.linalg.activations.Activation; // defines different activation functions like RELU, SOFTMAX, etc.
 import org.nd4j.linalg.lossfunctions.LossFunctions; // mean squared error, multiclass cross entropy, etc.
 import org.nd4j.linalg.util.ArrayUtil;
-//import org.deeplearning4j.datasets.iterator.impl.EmnistDataSetIterator;
 
 import java.io.File;
 import java.io.IOException;
@@ -40,7 +24,7 @@ import java.util.ArrayList;
 
 import static jdk.nashorn.internal.objects.Global.print;
 
-public class main {
+public class Main {
 
 
     public static int[] predict (String json) {
