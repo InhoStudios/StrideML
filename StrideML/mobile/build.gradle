@@ -28,4 +28,7 @@ dependencies {
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
     wearApp project(':wear')
     implementation 'com.google.android.gms:play-services-wearable:+'
+
+    implementation "org.deeplearning4j:deeplearning4j-core:1.0.0-beta3"
+    implementation "org.nd4j:nd4j-native-platform:1.0.0-beta3"
 }

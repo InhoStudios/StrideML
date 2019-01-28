@@ -1,4 +1,4 @@
-package ML.core;
+package com.nwhacks.strideml.MLCore;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;

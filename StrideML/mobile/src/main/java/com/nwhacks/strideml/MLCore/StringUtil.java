@@ -1,4 +1,4 @@
-package ML.core;
+package com.nwhacks.strideml.MLCore;
 
 import java.io.BufferedInputStream;
 import java.io.File;
